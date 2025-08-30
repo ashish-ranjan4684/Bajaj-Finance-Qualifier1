@@ -6,6 +6,33 @@ const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json())
 
+rateLimitBucket = {}
+
+function rateLimiter(req,res,next){
+    ip = req.ip;
+    if (!rateLimitBucket.ip){
+        rateLimitBucket.ip = {windowStart:Date.now(),numberOfRequests:1};
+        console.log(ip+"is first time user")
+        next();
+
+    }else{
+        if(Date.now() - rateLimitBucket.ip.windowStart > 10000){
+            rateLimitBucket.ip.windowStart = Date.now();
+            rateLimitBucket.ip.numberOfRequests = 1;
+            next();
+        }else if(rateLimitBucket.ip.numberOfRequests < 2){
+            rateLimitBucket.ip.numberOfRequests++;
+            console.log("number of requests for ip"+ip+"="+rateLimitBucket.ip.numberOfRequests)
+            next();
+        }else{
+            console.log("request blocked for ip"+ip);
+            res.sendStatus(409);
+        }
+    }
+}
+
+app.use(rateLimiter)
+
 app.post("/bhfl", (req, res) => {
     let data = req.body.data;
     let is_success = true;
