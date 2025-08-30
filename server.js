@@ -1,12 +1,13 @@
 const bodyParser = require("body-parser");
 const express = require("express");
+const {SWRateLimiter} = require("./SlidingWindowRateLimiter")
 
 const app = express();
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json())
 
-rateLimitBucket = {}
+/*rateLimitBucket = {}
 
 function rateLimiter(req,res,next){
     ip = req.ip;
@@ -29,9 +30,12 @@ function rateLimiter(req,res,next){
             res.sendStatus(409);
         }
     }
-}
+}*/
 
-app.use(rateLimiter)
+let rateLimiter = new SWRateLimiter(10000,3);
+
+
+app.use(rateLimiter.limit);
 
 app.post("/bhfl", (req, res) => {
     let data = req.body.data;
